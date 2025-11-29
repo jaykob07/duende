@@ -81,8 +81,22 @@ export const saveProduct = async (product: Product): Promise<Product[]> => {
       throw error;
     }
   } else {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const current = getProductsLocal();
+      
+      // VALIDACIÓN DE DUPLICADOS (Referencia única)
+      // Buscamos si existe algun producto con la MISMA referencia pero DIFERENTE ID
+      const duplicate = current.find(p => 
+        p.reference.toLowerCase().trim() === product.reference.toLowerCase().trim() && 
+        p.id !== product.id
+      );
+
+      if (duplicate) {
+        // Rechazamos la promesa con un error específico
+        reject(new Error(`La referencia "${product.reference}" ya existe en el producto: ${duplicate.name}`));
+        return;
+      }
+
       const index = current.findIndex(p => p.id === product.id);
       
       let updated;

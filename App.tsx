@@ -116,10 +116,28 @@ const App: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(price);
+  };
+
   const openWhatsApp = (product: Product) => {
     // Replace this number with the owner's WhatsApp number
     const phoneNumber = "573001234567"; 
-    const message = `Hola Accesorios El Duende, estoy interesado en el producto con Referencia: ${product.reference} (${product.name}).`;
+    
+    const priceFormatted = formatPrice(product.price);
+
+    // Construimos un mensaje detallado para que el vendedor sepa exactamente qué es
+    let message = `Hola Accesorios El Duende, estoy interesado en este producto:\n\n`;
+    message += `🏷️ *Producto:* ${product.name}\n`;
+    message += `🔑 *Referencia:* ${product.reference}\n`;
+    message += `💰 *Precio:* ${priceFormatted}\n`;
+
+    // Si la imagen es una URL web (ej. cuando tengas el VPS), la adjuntamos al texto.
+    // Si es Base64 (data:image...), es muy larga para enviarla por URL, así que la omitimos.
+    if (product.imageUrl && product.imageUrl.startsWith('http')) {
+       message += `\n🖼️ *Ver foto:* ${product.imageUrl}`;
+    }
+
     const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
@@ -128,10 +146,6 @@ const App: React.FC = () => {
     p.name.toLowerCase().includes(search.toLowerCase()) || 
     p.reference.toLowerCase().includes(search.toLowerCase())
   );
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(price);
-  };
 
   // --- VIEWS ---
 

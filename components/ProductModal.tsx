@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, Upload, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { X, Sparkles, Upload, Image as ImageIcon, Trash2, AlertCircle } from 'lucide-react';
 import { Product } from '../types';
 import { Button } from './Button';
 import { Input, TextArea } from './Input';
@@ -22,9 +22,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    setSaveError(null); // Clear errors when opening/changing data
     if (initialData) {
       setFormData(initialData);
     } else {
@@ -38,9 +40,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
     }
   }, [initialData, isOpen]);
 
+  // Clear error when user types
+  const handleInputChange = (field: keyof Product, value: any) => {
+    setSaveError(null);
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleGenerateDescription = async () => {
     if (!formData.name) return;
     setIsGenerating(true);
+    setSaveError(null);
     try {
       const description = await generateProductDescription(formData.name);
       setFormData(prev => ({ ...prev, features: description }));
@@ -52,6 +61,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSaveError(null);
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -74,6 +84,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
     if (!formData.name || !formData.reference || !formData.price) return;
     
     setIsSaving(true);
+    setSaveError(null);
+    
     try {
         const product: Product = {
         id: initialData?.id || crypto.randomUUID(),
@@ -86,8 +98,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
         };
         await onSave(product);
         onClose();
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to save", error);
+        // Show error message in the modal
+        setSaveError(error.message || "Error al guardar el producto.");
     } finally {
         setIsSaving(false);
     }
@@ -112,7 +126,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
             label="Nombre del Producto" 
             placeholder="Ej. Anillo Solitario"
             value={formData.name}
-            onChange={e => setFormData(prev => ({...prev, name: e.target.value}))}
+            onChange={e => handleInputChange('name', e.target.value)}
             required
             disabled={isSaving}
           />
@@ -122,16 +136,17 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
               label="Referencia" 
               placeholder="REF-000"
               value={formData.reference}
-              onChange={e => setFormData(prev => ({...prev, reference: e.target.value}))}
+              onChange={e => handleInputChange('reference', e.target.value)}
               required
               disabled={isSaving}
+              error={saveError && saveError.includes('referencia') ? 'Referencia duplicada' : undefined}
             />
             <Input 
               label="Precio (COP)" 
               type="number"
               placeholder="0"
               value={formData.price === 0 ? '' : formData.price}
-              onChange={e => setFormData(prev => ({...prev, price: e.target.value === '' ? 0 : parseFloat(e.target.value)}))}
+              onChange={e => handleInputChange('price', e.target.value === '' ? 0 : parseFloat(e.target.value))}
               required
               disabled={isSaving}
             />
@@ -143,7 +158,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
               rows={3}
               placeholder="Descripción del producto..."
               value={formData.features}
-              onChange={e => setFormData(prev => ({...prev, features: e.target.value}))}
+              onChange={e => handleInputChange('features', e.target.value)}
               disabled={isSaving}
             />
             <button
@@ -208,6 +223,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
               disabled={isSaving}
             />
           </div>
+
+          {/* ERROR DISPLAY */}
+          {saveError && (
+            <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm flex items-start gap-2 animate-pulse">
+              <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+              <span>{saveError}</span>
+            </div>
+          )}
 
           <div className="flex gap-3 mt-6 pt-4 border-t border-gray-100">
             <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving} className="flex-1">Cancelar</Button>
