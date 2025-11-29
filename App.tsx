@@ -80,15 +80,17 @@ const App: React.FC = () => {
   };
 
   const handleSaveProduct = async (product: Product) => {
-    setIsLoading(true);
+    // No activamos setIsLoading global aquí porque el Modal ya maneja su propio estado de "Guardando..."
+    // Esto evita parpadeos innecesarios en el fondo.
     try {
       const updatedList = await saveProduct(product);
       setProducts(updatedList);
       setEditingProduct(null);
+      // NO llamamos a setIsLoading(false) aquí porque el modal se encargará de cerrarse.
     } catch (error) {
-      alert("Error guardando producto");
-    } finally {
-      setIsLoading(false);
+      // IMPORTANTE: Re-lanzamos el error para que el ProductModal lo capture.
+      // Si usamos alert() aquí, el error muere aquí y el modal piensa que todo salió bien y se cierra.
+      throw error; 
     }
   };
 
