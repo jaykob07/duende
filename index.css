@@ -1,0 +1,7 @@
+/* Sintaxis de Tailwind v4 */
+
+/* 1. Reemplaza @tailwind base por el import de Preflight */
+@import "tailwindcss/preflight";
+
+/* 2. Combina components y utilities en una sola directiva */
+@import "tailwindcss";
