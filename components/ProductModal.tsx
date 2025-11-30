@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, Upload, Image as ImageIcon, Trash2, AlertCircle } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Trash2, AlertCircle } from 'lucide-react';
 import { Product } from '../types';
 import { Button } from './Button';
 import { Input, TextArea } from './Input';
-import { generateProductDescription } from '../services/geminiService';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -20,7 +19,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
     features: '',
     imageUrl: '',
   });
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -44,20 +42,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
   const handleInputChange = (field: keyof Product, value: any) => {
     setSaveError(null);
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleGenerateDescription = async () => {
-    if (!formData.name) return;
-    setIsGenerating(true);
-    setSaveError(null);
-    try {
-      const description = await generateProductDescription(formData.name);
-      setFormData(prev => ({ ...prev, features: description }));
-    } catch (e) {
-      alert("Error generating description. Check API Key.");
-    } finally {
-      setIsGenerating(false);
-    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,7 +72,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
     
     try {
         const product: Product = {
-        id: initialData?.id || crypto.randomUUID(),
+        // Fallback robusto para generación de ID si crypto no está disponible
+        id: initialData?.id || (Date.now().toString(36) + Math.random().toString(36).substr(2)),
         name: formData.name,
         reference: formData.reference,
         price: Number(formData.price),
@@ -152,26 +137,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
             />
           </div>
 
-          <div className="relative">
-             <TextArea 
-              label="Características / Descripción" 
-              rows={3}
-              placeholder="Descripción del producto..."
-              value={formData.features}
-              onChange={e => handleInputChange('features', e.target.value)}
-              disabled={isSaving}
-            />
-            <button
-              type="button"
-              onClick={handleGenerateDescription}
-              disabled={isGenerating || isSaving || !formData.name}
-              className="absolute right-2 top-8 text-xs flex items-center gap-1 text-duende-gold hover:text-duende-dark transition-colors disabled:opacity-30"
-              title="Generar con IA"
-            >
-              <Sparkles size={14} />
-              {isGenerating ? 'Generando...' : 'Autocompletar con IA'}
-            </button>
-          </div>
+          <TextArea 
+            label="Características / Descripción" 
+            rows={3}
+            placeholder="Descripción del producto..."
+            value={formData.features}
+            onChange={e => handleInputChange('features', e.target.value)}
+            disabled={isSaving}
+          />
 
           {/* Image Upload Section */}
           <div className="space-y-2">
@@ -189,8 +162,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onS
                 <p className="text-xs text-gray-400">PNG, JPG, WEBP (Max 5MB)</p>
               </div>
             ) : (
-              <div className="relative rounded-lg overflow-hidden border border-gray-200 group">
-                <img src={formData.imageUrl} alt="Preview" className="w-full h-48 object-cover" />
+              <div className="relative rounded-lg overflow-hidden border border-gray-200 group h-64 bg-gray-50">
+                <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-contain" />
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                    <button 
                     type="button"
