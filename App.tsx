@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, MessageCircle } from 'lucide-react';
 import { Product, ViewState } from './types';
 import { getProducts, saveProduct, deleteProduct } from './services/storage';
 import { ProductModal } from './components/ProductModal';
@@ -61,6 +61,12 @@ const App: React.FC = () => {
   };
 
   const handleDeleteProduct = async (id: string) => {
+    // Safety check
+    if (!id) {
+        alert("Error: ID de producto no válido.");
+        return;
+    }
+
     if (window.confirm('¿Estás seguro de eliminar esta joya permanentemente?')) {
       setIsLoading(true);
       try {
@@ -86,10 +92,11 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-duende-cream font-sans selection:bg-duende-gold selection:text-white flex flex-col">
+    // CAMBIO: Estructura Grid en lugar de Flex
+    <div className="min-h-screen bg-duende-cream font-sans selection:bg-duende-gold selection:text-white grid grid-rows-[auto_1fr_auto]">
       <Navbar view={view} setView={setView} handleLogout={handleLogout} />
       
-      <main className="flex-grow">
+      <main className="w-full relative">
         {view === 'gallery' && (
           <GalleryView 
             products={products} 
@@ -117,6 +124,23 @@ const App: React.FC = () => {
       </main>
 
       {view === 'gallery' && <Footer />}
+
+      {/* Floating WhatsApp Button (Solo visible en Galería) */}
+      {view === 'gallery' && (
+        <a 
+          href="https://wa.me/573001234567?text=Hola,%20quisiera%20más%20información%20sobre%20sus%20accesorios."
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-6 right-6 z-40 bg-green-600 text-white p-4 rounded-full shadow-lg hover:shadow-2xl hover:bg-green-700 transition-all duration-300 hover:scale-110 flex items-center justify-center group"
+          title="Chat general"
+        >
+          <MessageCircle size={28} className="fill-current" />
+          {/* Tooltip on hover */}
+          <span className="absolute right-full mr-3 bg-white text-gray-800 text-xs font-bold px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            ¡Escríbenos!
+          </span>
+        </a>
+      )}
 
       {/* Lightbox Modal */}
       {viewingImage && (
